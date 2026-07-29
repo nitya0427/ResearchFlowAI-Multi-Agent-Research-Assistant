@@ -7,15 +7,16 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.messages import HumanMessage, SystemMessage
-
+from langchain_groq import ChatGroq
+from dotenv import load_dotenv
+load_dotenv()
 
 # ── LLM builder ──────────────────────────────────────────────────────────────
 
-def build_llm(google_api_key: str) -> ChatGoogleGenerativeAI:
-    return ChatGoogleGenerativeAI(
-        model="gemini-2.0-flash",
+def build_llm(groq_api_key: str) -> ChatGroq:
+    return ChatGroq(
+        model="llama-3.3-70b-versatile",
         temperature=0.3,
-        google_api_key=google_api_key,
     )
 
 
@@ -139,7 +140,7 @@ One line verdict:
 
 # ── Main pipeline (generator for live Streamlit updates) ─────────────────────
 
-def run_research_pipeline(topic: str, tavily_api_key: str, google_api_key: str):
+def run_research_pipeline(topic: str, tavily_api_key: str, groq_api_key: str):
     """
     Generator yielding (step, status, data) tuples so Streamlit
     can update the UI in real-time.
@@ -148,7 +149,7 @@ def run_research_pipeline(topic: str, tavily_api_key: str, google_api_key: str):
     Status: running | done | error
     """
     state = {}
-    llm = build_llm(google_api_key)
+    llm = build_llm(groq_api_key)
 
     # ── Step 1: Search Agent ──────────────────────────────────────────────────
     yield ("search", "running", None)

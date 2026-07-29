@@ -313,17 +313,17 @@ with st.sidebar:
         type="password", placeholder="tvly-..."
     )
 
-    st.markdown('<div class="api-label">🔑 Google (Gemini) API Key</div>', unsafe_allow_html=True)
-    google_key = st.text_input(
-        "Google", label_visibility="collapsed",
-        value=st.session_state.get("google_key", ""),
-        type="password", placeholder="AIza..."
+    st.markdown('<div class="api-label">🔑 Groq API Key</div>', unsafe_allow_html=True)
+    groq_key = st.text_input(
+        "Groq", label_visibility="collapsed",
+        value=st.session_state.get("groq_key", ""),
+        type="password", placeholder="gsk-..."
     )
 
     if tavily_key:
         st.session_state.tavily_key = tavily_key
-    if google_key:
-        st.session_state.google_key = google_key
+    if groq_key:
+        st.session_state.groq_key = groq_key
 
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
@@ -332,8 +332,8 @@ with st.sidebar:
         <div style="color:#5a5a6a;margin-bottom:6px;letter-spacing:2px;font-size:0.6rem;text-transform:uppercase">Pipeline</div>
         🔍 Search Agent — Tavily API<br>
         📖 Reader Agent — BeautifulSoup<br>
-        ✍️ Writer Agent — Gemini 2.5 Flash<br>
-        ✅ Critic Agent — Gemini 2.5 Flash
+        ✍️ Writer Agent — Groq Llama 3.3<br>
+        ✅ Critic Agent — Groq Llama 3.3
     </div>
     """, unsafe_allow_html=True)
 
@@ -349,7 +349,7 @@ with st.sidebar:
 st.markdown("""
 <div class="hero-wrap">
     <h1 class="hero-title">Research<span>Flow AI</span></h1>
-    <p class="hero-sub">4-Agent AI Research Pipeline · Powered by Gemini + Tavily</p>
+    <p class="hero-sub">4-Agent AI Research Pipeline · Powered by Groq (Llama 3.3 70B) + Tavily</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -394,66 +394,25 @@ if run_btn:
         st.warning("Please enter a research topic.")
     elif not st.session_state.get("tavily_key"):
         st.warning("Add your Tavily API key in the sidebar.")
-    elif not st.session_state.get("google_key"):
-        st.warning("Add your Google API key in the sidebar.")
+    elif not st.session_state.get("groq_key"):
+        st.warning("Add your Groq API key in the sidebar.")
     else:
         st.session_state.running = True
         st.session_state.results = {}
         st.session_state.pipeline_status = {}
         st.session_state.current_topic = topic
         st.rerun()
-
-# ── Live pipeline execution ───────────────────────────────────────────────────
-if st.session_state.running:
-    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-
-    results_placeholder = st.empty()
-
-    with results_placeholder.container():
-        pipeline_bar(st.session_state.pipeline_status)
-
-        try:
-            for step, status, data in run_research_pipeline(
-                st.session_state.current_topic,
-                st.session_state.tavily_key,
-                st.session_state.google_key,
-            ):
-                if step == "complete":
-                    st.session_state.results = data
-                    st.session_state.running = False
-                    st.session_state.pipeline_status = {
-                        "search": "done", "reader": "done",
-                        "writer": "done", "critic": "done"
-                    }
-                    break
-
-                st.session_state.pipeline_status[step] = status
-
-                if status == "done":
-                    st.session_state.results[step] = data
-
-                results_placeholder.empty()
-                with results_placeholder.container():
-                    pipeline_bar(st.session_state.pipeline_status)
-                    _render_results(st.session_state.results, st.session_state.pipeline_status)
-
-        except Exception as e:
-            st.session_state.running = False
-            st.error(f"Pipeline error: {str(e)}")
-
-    st.rerun()
-
 # ── Render function ───────────────────────────────────────────────────────────
 def _render_results(results: dict, statuses: dict):
 
     CARDS = [
-        ("search",  "Search Agent — Tavily API",  "badge-search", "card-search",  "🔍",
+        ("search",  "SEARCH AGENT",  "badge-search", "card-search",  "🔵",
          "Web search results gathered by Tavily"),
-        ("reader",  "Reader Agent — BeautifulSoup",  "badge-reader", "card-reader",  "📖",
+        ("reader",  "READER AGENT",  "badge-reader", "card-reader",  "🟣",
          "Deep content scraped from top URL"),
-        ("writer",  "Writer Agent — Gemini 2.5 Flash",  "badge-writer", "card-writer",  "✍️",
+        ("writer",  "WRITER CHAIN",  "badge-writer", "card-writer",  "🟡",
          "Structured research report"),
-        ("critic",  "Critic Agent — Gemini 2.5 Flash",  "badge-critic", "card-critic",  "✅",
+        ("critic",  "CRITIC CHAIN",  "badge-critic", "card-critic",  "🟢",
          "Expert evaluation & score"),
     ]
 
@@ -554,6 +513,47 @@ if st.session_state.results and not st.session_state.running:
         """, unsafe_allow_html=True)
 
     _render_results(st.session_state.results, st.session_state.pipeline_status)
+
+# ── Live pipeline execution ───────────────────────────────────────────────────
+if st.session_state.running:
+    st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
+
+    results_placeholder = st.empty()
+
+    with results_placeholder.container():
+        pipeline_bar(st.session_state.pipeline_status)
+
+        try:
+            for step, status, data in run_research_pipeline(
+                st.session_state.current_topic,
+                st.session_state.tavily_key,
+                st.session_state.groq_key,
+            ):
+                if step == "complete":
+                    st.session_state.results = data
+                    st.session_state.running = False
+                    st.session_state.pipeline_status = {
+                        "search": "done", "reader": "done",
+                        "writer": "done", "critic": "done"
+                    }
+                    break
+
+                st.session_state.pipeline_status[step] = status
+
+                if status == "done":
+                    st.session_state.results[step] = data
+
+                results_placeholder.empty()
+                with results_placeholder.container():
+                    pipeline_bar(st.session_state.pipeline_status)
+                    _render_results(st.session_state.results, st.session_state.pipeline_status)
+
+        except Exception as e:
+            st.session_state.running = False
+            st.error(f"Pipeline error: {str(e)}")
+
+    st.rerun()
+
 
 # ── Empty state ───────────────────────────────────────────────────────────────
 if not st.session_state.results and not st.session_state.running:
